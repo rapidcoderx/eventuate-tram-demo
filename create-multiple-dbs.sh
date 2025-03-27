@@ -3,6 +3,9 @@
 set -e
 set -u
 
+export POSTGRES_MULTIPLE_DATABASES=balance_db,transaction_db
+export POSTGRES_USER=postgres
+
 function create_user_and_database() {
     local database=$1
     echo "Creating user and database '$database'"
