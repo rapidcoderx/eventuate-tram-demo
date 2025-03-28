@@ -12,6 +12,11 @@ chmod +x create-multiple-dbs.sh
 echo "Building JAR files using Maven..."
 mvn clean package -DskipTests
 
+# Step 2.1: Build Docker images with no-cache
+echo "Building Docker images with no-cache..."
+docker build -t tram/balance-service:latest --no-cache -f ./balance-service/Dockerfile ./balance-service/target
+docker build -t tram/transaction-service:latest --no-cache -f ./transaction-service/Dockerfile ./transaction-service/target
+
 # Step 3: Bring everything down
 echo "Stopping any running containers..."
 docker compose down

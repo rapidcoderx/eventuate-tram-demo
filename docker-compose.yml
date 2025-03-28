@@ -94,9 +94,7 @@ services:
       start_period: 20s
 
   balance-service:
-    build:
-      context: ./balance-service/target
-      dockerfile: ../Dockerfile
+    image: tram/balance-service:latest
     container_name: balance-service
     ports:
       - "8081:8081"
@@ -118,9 +116,7 @@ services:
       start_period: 60s
 
   transaction-service:
-    build:
-      context: ./transaction-service/target
-      dockerfile: ../Dockerfile
+    image: tram/account-service:latest
     container_name: transaction-service
     ports:
       - "8082:8082"
