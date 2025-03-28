@@ -15,6 +15,14 @@ public class AccountCreatedEvent implements DomainEvent {
   private String accountId;
   private String ownerName;
   private BigDecimal initialBalance;
-  private LocalDateTime createdAt;
-}
+  private String createdAt;
 
+  // Add a constructor that accepts LocalDateTime
+  public AccountCreatedEvent(
+      String accountId, String ownerName, BigDecimal initialBalance, LocalDateTime createdAt) {
+    this.accountId = accountId;
+    this.ownerName = ownerName;
+    this.initialBalance = initialBalance;
+    this.createdAt = createdAt.toString(); // Convert to String
+  }
+}
