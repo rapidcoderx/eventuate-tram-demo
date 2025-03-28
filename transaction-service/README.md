@@ -1,82 +1,129 @@
-# Eventuate Tram Microservices Demo
+# Transaction Service
 
-This project demonstrates the use of Eventuate Tram for implementing transactional messaging between microservices.
+## Overview
+The Transaction Service is a microservice that handles transaction processing in the Eventuate Tram Microservices Demo. It coordinates with the Balance Service to validate accounts and publishes transaction events for balance updates, demonstrating an event-driven architecture.
 
-## Project Structure
+## Features
+- Create transactions (PAYMENT/DEPOSIT)
+- Retrieve transaction details
+- Get transaction history for an account
+- Validate transactions with the Balance Service via REST API
+- Publish transaction events to Kafka using Eventuate Tram
 
-- **Balance Service**: Manages account creation and balances
-- **Transaction Service**: Handles transaction processing with coordination with Balance Service
+## Technical Stack
+- Java 17
+- Spring Boot 3.4.4
+- Spring Data JPA
+- Spring WebFlux for REST client
+- Eventuate Tram for event publishing
+- PostgreSQL database
+- Kafka for messaging
 
-## Prerequisites
+## API Endpoints
 
-- JDK 17
-- Maven
-- Docker and Docker Compose
+### Create Transaction
+```
+POST /transactions
+```
+**Request Body:**
+```json
+{
+  "accountId": "your-account-id",
+  "amount": 250.00,
+  "type": "DEPOSIT",  
+  "description": "Initial deposit"
+}
+```
+**Response:** The created transaction object with generated ID
 
-## Infrastructure Setup
+### Get Transaction
+```
+GET /transactions/{transactionId}
+```
+**Response:** Transaction details or 404 if not found
 
-1. Create the necessary directory for PostgreSQL initialization script:
+### Get Transactions by Account
+```
+GET /transactions/by-account/{accountId}
+```
+**Response:** List of transactions for the specified account
 
-```bash
-mkdir -p docker/postgres
+## Transaction Flow
+1. When a transaction is created, the service validates the account by calling the Balance Service
+2. If validation passes, the transaction is saved in the database
+3. A `TransactionCreatedEvent` is published to Kafka
+4. The Balance Service consumes this event and updates the account balance accordingly
+
+## Event Publishing
+The service publishes the following events:
+- `TransactionCreatedEvent`: Contains transaction details including accountId, amount, type, etc.
+
+## Configuration
+The main configuration is in `application.properties`:
+```properties
+# Application settings
+spring.application.name=transaction-service
+server.port=8082
+
+# Database connection
+spring.datasource.url=jdbc:postgresql://localhost:5432/transaction_db
+spring.datasource.username=postgres
+spring.datasource.password=postgres
+
+# Eventuate Tram settings
+eventuatelocal.kafka.bootstrap.servers=localhost:9092
 ```
 
-2. Make the initialization script executable:
+## Building and Running
+You can run the service in multiple ways:
 
+### Using Maven
 ```bash
-cp postgres-init-script.sh docker/postgres/create-multiple-dbs.sh
-chmod +x docker/postgres/create-multiple-dbs.sh
-```
-
-3. Start the infrastructure (PostgreSQL, Kafka, Zookeeper):
-
-```bash
-docker-compose up -d
-```
-
-## Running the Balance Service
-
-```bash
-cd balance-service
+cd transaction-service
 mvn spring-boot:run
 ```
 
-## Testing the Balance Service
-
-1. Create a new account:
-
+### Using Docker
 ```bash
-curl -X POST http://localhost:8081/accounts \
+# Build the Docker image
+docker build -t transaction-service .
+
+# Run the container
+docker run -p 8082:8082 transaction-service
+```
+
+### Using the build-and-run.sh Script
+The repository includes a `build-and-run.sh` script that builds and runs all services:
+```bash
+chmod +x build-and-run.sh
+./build-and-run.sh
+```
+
+## Docker Compose
+The service is also configured in `docker-compose.yml` to run as part of the complete microservices demo:
+```bash
+docker compose up -d
+```
+
+## Testing
+You can test the service using curl:
+```bash
+# Create a transaction
+curl -X POST http://localhost:8082/transactions \
   -H "Content-Type: application/json" \
-  -d '{"ownerName":"John Doe","initialBalance":1000.00}'
+  -d '{
+    "accountId": "your-account-id",
+    "amount": 250.00,
+    "type": "DEPOSIT",
+    "description": "Initial deposit"
+  }'
+
+# Get transactions by account
+curl -X GET http://localhost:8082/transactions/by-account/your-account-id
 ```
 
-2. Get account details:
-
-```bash
-curl -X GET http://localhost:8081/accounts/{accountId}
-```
-
-3. Validate account balance:
-
-```bash
-curl -X GET "http://localhost:8081/accounts/{accountId}/validate?amount=500.00"
-```
-
-## Database Schema
-
-The PostgreSQL databases will have the following schemas:
-
-1. **balance_db**: Stores account information
-    - Account table
-    - Eventuate messaging tables
-
-2. **transaction_db**: Will store transaction data (to be implemented)
-    - Transaction table
-    - Eventuate messaging tables
-
-## Next Steps
-
-- Implementation of the Transaction Service
-- Testing the communication between services using Eventuate Tram
-- Adding unit and integration tests
+## Troubleshooting
+- If the service fails to connect to PostgreSQL, ensure the database is running and accessible
+- If the Balance Service validation fails, check that the Balance Service is running
+- If event publishing isn't working, check that Kafka is running and the topics are created
+- Check logs with `docker compose logs transaction-service` when running with Docker Compose
