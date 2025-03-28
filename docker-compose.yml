@@ -95,8 +95,8 @@ services:
 
   balance-service:
     build:
-      context: .
-      dockerfile: balance-service/Dockerfile
+      context: ./balance-service/target
+      dockerfile: ../Dockerfile
     container_name: balance-service
     ports:
       - "8081:8081"
@@ -105,7 +105,6 @@ services:
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
       - EVENTUATELOCAL_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
-      - EVENTUATELOCAL_ZOOKEEPER_CONNECTION_STRING=kafka:2181
     depends_on:
       - postgres
     networks:
@@ -119,8 +118,8 @@ services:
 
   transaction-service:
     build:
-      context: .
-      dockerfile: transaction-service/Dockerfile
+      context: ./transaction-service/target
+      dockerfile: ../Dockerfile
     container_name: transaction-service
     ports:
       - "8082:8082"
@@ -129,7 +128,6 @@ services:
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=postgres
       - EVENTUATELOCAL_KAFKA_BOOTSTRAP_SERVERS=kafka:9093
-      - EVENTUATELOCAL_ZOOKEEPER_CONNECTION_STRING=kafka:2181
       - BALANCE_SERVICE_URL=http://balance-service:8081
     depends_on:
       - postgres
@@ -147,7 +145,7 @@ services:
     image: postgres:16-alpine
     container_name: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
