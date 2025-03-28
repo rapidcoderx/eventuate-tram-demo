@@ -11,11 +11,11 @@ import org.springframework.context.annotation.Import;
 
 @SpringBootApplication
 @Import({
-        TramMessageProducerJdbcConfiguration.class,
-        TramConsumerJdbcAutoConfiguration.class,
-        EventuateTramKafkaMessageConsumerConfiguration.class,
-        TramEventsPublisherConfiguration.class,
-        TramEventSubscriberConfiguration.class
+  TramMessageProducerJdbcConfiguration.class,
+  TramConsumerJdbcAutoConfiguration.class,
+  EventuateTramKafkaMessageConsumerConfiguration.class,
+  TramEventsPublisherConfiguration.class,
+  TramEventSubscriberConfiguration.class
 })
 public class BalanceServiceApplication {
   public static void main(String[] args) {
