@@ -1,0 +1,287 @@
+{
+  "info": {
+    "name": "Eventuate Tram Microservices Demo",
+    "description": "A collection to test the Eventuate Tram Demo application with Balance and Transaction services",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Balance Service",
+      "item": [
+        {
+          "name": "Create Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"ownerName\": \"John Doe\",\n    \"initialBalance\": 1000.00\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/accounts",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["accounts"]
+            },
+            "description": "Create a new account with an initial balance"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Account",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/accounts/{{accountId}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["accounts", "{{accountId}}"]
+            },
+            "description": "Retrieve account details by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Accounts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/accounts",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["accounts"]
+            },
+            "description": "Retrieve all accounts in the system"
+          },
+          "response": []
+        },
+        {
+          "name": "Validate Account",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8081/accounts/{{accountId}}/validate?amount=500.00",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["accounts", "{{accountId}}", "validate"],
+              "query": [
+                {
+                  "key": "amount",
+                  "value": "500.00"
+                }
+              ]
+            },
+            "description": "Validate if an account has sufficient balance for a transaction"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Account Balance",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"amount\": 200.00,\n    \"credit\": true\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/accounts/{{accountId}}/balance",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["accounts", "{{accountId}}", "balance"]
+            },
+            "description": "Update an account's balance (credit or debit)"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Account Owner",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"ownerName\": \"Jane Smith\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/accounts/{{accountId}}/owner",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["accounts", "{{accountId}}", "owner"]
+            },
+            "description": "Update an account's owner information"
+          },
+          "response": []
+        },
+        {
+          "name": "Close Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"reason\": \"Customer requested closure\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8081/accounts/{{accountId}}/close",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8081",
+              "path": ["accounts", "{{accountId}}", "close"]
+            },
+            "description": "Close an account with a specified reason"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for managing accounts in the Balance Service"
+    },
+    {
+      "name": "Transaction Service",
+      "item": [
+        {
+          "name": "Create Deposit Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"accountId\": \"{{accountId}}\",\n    \"amount\": 250.00,\n    \"type\": \"DEPOSIT\",\n    \"description\": \"Initial deposit\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/transactions",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["transactions"]
+            },
+            "description": "Create a deposit transaction for an account"
+          },
+          "response": []
+        },
+        {
+          "name": "Create Payment Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"accountId\": \"{{accountId}}\",\n    \"amount\": 150.00,\n    \"type\": \"PAYMENT\",\n    \"description\": \"Online purchase\"\n}"
+            },
+            "url": {
+              "raw": "http://localhost:8082/transactions",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["transactions"]
+            },
+            "description": "Create a payment transaction for an account"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transaction",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8082/transactions/{{transactionId}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["transactions", "{{transactionId}}"]
+            },
+            "description": "Retrieve transaction details by ID"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transactions by Account",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "http://localhost:8082/transactions/by-account/{{accountId}}",
+              "protocol": "http",
+              "host": ["localhost"],
+              "port": "8082",
+              "path": ["transactions", "by-account", "{{accountId}}"]
+            },
+            "description": "Retrieve all transactions for a specific account"
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for managing transactions in the Transaction Service"
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "accountId",
+      "value": "",
+      "type": "string",
+      "description": "Store the account ID from the create account response"
+    },
+    {
+      "key": "transactionId",
+      "value": "",
+      "type": "string",
+      "description": "Store the transaction ID from the create transaction response"
+    }
+  ]
+}
