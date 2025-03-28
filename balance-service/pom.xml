@@ -32,10 +32,7 @@
             <groupId>io.eventuate.tram.core</groupId>
             <artifactId>eventuate-tram-spring-consumer-kafka</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.eventuate.tram.core</groupId>
-            <artifactId>eventuate-tram-spring-consumer-jdbc</artifactId>
-        </dependency>
+
         <dependency>
             <groupId>io.eventuate.tram.core</groupId>
             <artifactId>eventuate-tram-spring-producer-jdbc</artifactId>
