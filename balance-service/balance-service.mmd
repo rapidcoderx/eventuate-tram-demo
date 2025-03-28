@@ -1,0 +1,36 @@
+sequenceDiagram
+    participant Client
+    participant AccountController
+    participant AccountService
+    participant AccountRepository
+    participant AccountEventPublisher
+    participant Kafka
+    participant PostgreSQL
+    participant OtherServices
+
+    Client->>AccountController: POST /accounts {ownerName, initialBalance}
+    Note over AccountController: @PostMapping
+
+    AccountController->>AccountService: createAccount(ownerName, initialBalance)
+    Note over AccountService: @Transactional begins
+
+    AccountService->>AccountService: Generate UUID for accountId
+    AccountService->>AccountService: Create Account object
+
+    AccountService->>AccountRepository: save(account)
+    AccountRepository->>PostgreSQL: INSERT INTO account
+    PostgreSQL-->>AccountRepository: Return saved entity
+    AccountRepository-->>AccountService: Return saved account
+
+    AccountService->>AccountEventPublisher: publishAccountCreatedEvent(account)
+    AccountEventPublisher->>AccountEventPublisher: Create AccountCreatedEvent
+    AccountEventPublisher->>Kafka: Publish event (CloudEvents format)
+    Note over Kafka: Stored in Eventuate tables
+
+    Note over AccountService: @Transactional commits
+
+    AccountService-->>AccountController: Return account object
+    AccountController-->>Client: 200 OK with JSON response
+
+    Kafka-->>OtherServices: Consume AccountCreatedEvent
+    Note over OtherServices: Process event asynchronously

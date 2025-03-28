@@ -1,0 +1,86 @@
+asyncapi: '2.5.0'
+info:
+  title: Account Service
+  version: '1.0.0'
+  description: |
+    This service provides account management functionality and publishes account-related events.
+
+servers:
+  kafka:
+    url: localhost:9092
+    protocol: kafka
+    description: Kafka broker for event publishing
+
+channels:
+  com.digital.tram.balance.domain.Account:
+    publish:
+      summary: Account events channel
+      description: Channel for account-related events
+      operationId: publishAccountEvent
+      message:
+        $ref: '#/components/messages/AccountEvent'
+
+components:
+  messages:
+    AccountEvent:
+      name: AccountEvent
+      title: Account event message
+      summary: Events related to account operations
+      contentType: application/json
+      traits:
+        - $ref: '#/components/messageTraits/CloudEventsTrait'
+      payload:
+        oneOf:
+          - $ref: '#/components/schemas/AccountCreatedEvent'
+          # Add other event types here as needed
+
+  schemas:
+    AccountCreatedEvent:
+      type: object
+      description: Event published when a new account is created
+      required:
+        - accountId
+        - ownerName
+        - initialBalance
+        - createdAt
+      properties:
+        accountId:
+          type: string
+          description: Unique identifier for the account
+        ownerName:
+          type: string
+          description: Name of the account owner
+        initialBalance:
+          type: number
+          format: double
+          description: Initial balance of the account
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the account was created
+
+  messageTraits:
+    CloudEventsTrait:
+      headers:
+        type: object
+        properties:
+          id:
+            type: string
+            description: Unique identifier for the event
+          source:
+            type: string
+            description: URI identifying the context in which the event happened
+          specversion:
+            type: string
+            description: Version of the CloudEvents specification
+            enum: ['1.0']
+          type:
+            type: string
+            description: Event type
+          datacontenttype:
+            type: string
+            description: Content type of the event data
+          time:
+            type: string
+            format: date-time
+            description: Timestamp of when the event occurred

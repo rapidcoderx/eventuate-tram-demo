@@ -5,6 +5,8 @@ import com.digital.tram.balance.domain.AccountRepository;
 import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
+
+import com.digital.tram.balance.messaging.AccountEventPublisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,17 +15,22 @@ import org.springframework.transaction.annotation.Transactional;
 public class AccountService {
 
     private final AccountRepository accountRepository;
+    private final AccountEventPublisher accountEventPublisher;
 
     @Autowired
-    public AccountService(AccountRepository accountRepository) {
+    public AccountService(AccountRepository accountRepository,AccountEventPublisher accountEventPublisher) {
         this.accountRepository = accountRepository;
+        this.accountEventPublisher = accountEventPublisher;
     }
 
     @Transactional
     public Account createAccount(String ownerName, BigDecimal initialBalance) {
         String accountId = UUID.randomUUID().toString();
         Account account = new Account(accountId, ownerName, initialBalance);
-        return accountRepository.save(account);
+        Account savedAccount = accountRepository.save(account);
+        // Publish event for account creation
+        accountEventPublisher.publishAccountCreatedEvent(savedAccount);
+        return savedAccount;
     }
 
     @Transactional(readOnly = true)
