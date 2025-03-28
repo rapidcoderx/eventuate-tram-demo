@@ -7,12 +7,14 @@ import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/accounts")
+@Slf4j
 public class AccountController {
 
   private final AccountService accountService;
@@ -24,6 +26,7 @@ public class AccountController {
 
   @PostMapping
   public ResponseEntity<Account> createAccount(@RequestBody CreateAccountRequest request) {
+    log.info("Received createAccount request: {}", request);
     Account account =
         accountService.createAccount(request.getOwnerName(), request.getInitialBalance());
     return ResponseEntity.ok(account);
