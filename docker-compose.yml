@@ -95,8 +95,8 @@ services:
 
   balance-service:
     build:
-      context: ./balance-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: balance-service/Dockerfile
     container_name: balance-service
     ports:
       - "8081:8081"
@@ -119,8 +119,8 @@ services:
 
   transaction-service:
     build:
-      context: ./transaction-service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: transaction-service/Dockerfile
     container_name: transaction-service
     ports:
       - "8082:8082"
