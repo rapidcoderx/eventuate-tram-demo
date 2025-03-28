@@ -4,10 +4,13 @@ import com.digital.tram.balance.domain.Account;
 import io.eventuate.tram.events.publisher.DomainEventPublisher;
 import java.time.LocalDateTime;
 import java.util.Collections;
+
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class AccountEventPublisher {
 
   private final DomainEventPublisher domainEventPublisher;
@@ -18,6 +21,8 @@ public class AccountEventPublisher {
   }
 
   public void publishAccountCreatedEvent(Account account) {
+    log.info("Publishing AccountCreatedEvent for account: {}", account.getAccountId());
+
     AccountCreatedEvent event =
         new AccountCreatedEvent(
             account.getAccountId(),

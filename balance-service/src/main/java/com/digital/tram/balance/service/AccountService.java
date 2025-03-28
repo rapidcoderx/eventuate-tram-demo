@@ -9,10 +9,13 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 public class AccountService {
 
@@ -29,12 +32,21 @@ public class AccountService {
 
   @Transactional
   public Account createAccount(String ownerName, BigDecimal initialBalance) {
+    // Existing code
     String accountId = UUID.randomUUID().toString();
     Account account = new Account(accountId, ownerName, initialBalance);
+
+    // Save account
     Account savedAccount = accountRepository.save(account);
 
-    // Publish event for account creation
-    accountEventPublisher.publishAccountCreatedEvent(savedAccount);
+    // Explicitly publish the event
+    try {
+      accountEventPublisher.publishAccountCreatedEvent(savedAccount);
+      log.info("Published AccountCreatedEvent for account: {}", accountId);
+    } catch (Exception e) {
+      log.error("Failed to publish AccountCreatedEvent for account: {}", accountId, e);
+      throw e; // Re-throw to trigger transaction rollback
+    }
 
     return savedAccount;
   }
