@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e  # Exit on error
+export COMPOSE_BAKE=true
 
 echo "=== Building Eventuate Tram Microservices Demo ==="
 
