@@ -32,7 +32,8 @@ components:
       payload:
         oneOf:
           - $ref: '#/components/schemas/AccountCreatedEvent'
-          # Add other event types here as needed
+          - $ref: '#/components/schemas/AccountUpdatedEvent'
+          - $ref: '#/components/schemas/AccountClosedEvent'
 
   schemas:
     AccountCreatedEvent:
@@ -58,6 +59,58 @@ components:
           type: string
           format: date-time
           description: Timestamp when the account was created
+
+    AccountUpdatedEvent:
+      type: object
+      description: Event published when an account is updated
+      required:
+        - accountId
+        - ownerName
+        - newBalance
+        - updatedAt
+      properties:
+        accountId:
+          type: string
+          description: Unique identifier for the account
+        ownerName:
+          type: string
+          description: Name of the account owner
+        newBalance:
+          type: number
+          format: double
+          description: Current balance after the update
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the account was updated
+
+    AccountClosedEvent:
+      type: object
+      description: Event published when an account is closed
+      required:
+        - accountId
+        - ownerName
+        - finalBalance
+        - closedAt
+        - closureReason
+      properties:
+        accountId:
+          type: string
+          description: Unique identifier for the account
+        ownerName:
+          type: string
+          description: Name of the account owner
+        finalBalance:
+          type: number
+          format: double
+          description: Final balance at time of closure
+        closedAt:
+          type: string
+          format: date-time
+          description: Timestamp when the account was closed
+        closureReason:
+          type: string
+          description: Reason for account closure
 
   messageTraits:
     CloudEventsTrait:

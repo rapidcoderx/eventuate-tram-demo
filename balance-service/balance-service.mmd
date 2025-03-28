@@ -6,31 +6,77 @@ sequenceDiagram
     participant AccountEventPublisher
     participant Kafka
     participant PostgreSQL
-    participant OtherServices
+    participant Consumers
 
-    Client->>AccountController: POST /accounts {ownerName, initialBalance}
-    Note over AccountController: @PostMapping
+%% Account Creation
+    rect rgba(191, 223, 255, 0.5)
+        Note over Client,PostgreSQL: Account Creation Flow
+        Client->>AccountController: POST /accounts
+        AccountController->>AccountService: createAccount(ownerName, initialBalance)
+        AccountService->>AccountService: Generate UUID
+        AccountService->>AccountRepository: save(account)
+        AccountRepository->>PostgreSQL: INSERT INTO account
+        PostgreSQL-->>AccountRepository: Return saved entity
+        AccountService->>AccountEventPublisher: publishAccountCreatedEvent(account)
+        AccountEventPublisher->>Kafka: Publish AccountCreatedEvent
+        AccountService-->>AccountController: Return account
+        AccountController-->>Client: Return created account
+    end
 
-    AccountController->>AccountService: createAccount(ownerName, initialBalance)
-    Note over AccountService: @Transactional begins
+%% Account Update
+    rect rgba(191, 255, 223, 0.5)
+        Note over Client,PostgreSQL: Account Update Flow
+        Client->>AccountController: PUT /accounts/{id}/owner
+        AccountController->>AccountService: updateAccountOwner(id, newOwnerName)
+        AccountService->>AccountRepository: findByAccountId(id)
+        AccountRepository->>PostgreSQL: SELECT FROM account
+        PostgreSQL-->>AccountRepository: Return account
+        AccountService->>AccountService: Update account owner
+        AccountService->>AccountRepository: save(account)
+        AccountRepository->>PostgreSQL: UPDATE account
+        PostgreSQL-->>AccountRepository: Return updated entity
+        AccountService->>AccountEventPublisher: publishAccountUpdatedEvent(account)
+        AccountEventPublisher->>Kafka: Publish AccountUpdatedEvent
+        AccountService-->>AccountController: Return updated account
+        AccountController-->>Client: Return updated account
+    end
 
-    AccountService->>AccountService: Generate UUID for accountId
-    AccountService->>AccountService: Create Account object
+%% Balance Update
+    rect rgba(255, 223, 191, 0.5)
+        Note over Client,PostgreSQL: Balance Update Flow
+        Client->>AccountController: PUT /accounts/{id}/balance
+        AccountController->>AccountService: updateBalance(id, amount, isCredit)
+        AccountService->>AccountRepository: findByAccountId(id)
+        AccountRepository->>PostgreSQL: SELECT FROM account
+        PostgreSQL-->>AccountRepository: Return account
+        AccountService->>AccountService: credit() or debit()
+        AccountService->>AccountRepository: save(account)
+        AccountRepository->>PostgreSQL: UPDATE account
+        PostgreSQL-->>AccountRepository: Return updated entity
+        AccountService->>AccountEventPublisher: publishAccountUpdatedEvent(account)
+        AccountEventPublisher->>Kafka: Publish AccountUpdatedEvent
+        AccountService-->>AccountController: Return updated account
+        AccountController-->>Client: Return updated account
+    end
 
-    AccountService->>AccountRepository: save(account)
-    AccountRepository->>PostgreSQL: INSERT INTO account
-    PostgreSQL-->>AccountRepository: Return saved entity
-    AccountRepository-->>AccountService: Return saved account
+%% Account Closure
+    rect rgba(255, 191, 191, 0.5)
+        Note over Client,PostgreSQL: Account Closure Flow
+        Client->>AccountController: POST /accounts/{id}/close
+        AccountController->>AccountService: closeAccount(id, reason)
+        AccountService->>AccountRepository: findByAccountId(id)
+        AccountRepository->>PostgreSQL: SELECT FROM account
+        PostgreSQL-->>AccountRepository: Return account
+        AccountService->>AccountService: Set account.closed = true
+        AccountService->>AccountRepository: save(account)
+        AccountRepository->>PostgreSQL: UPDATE account
+        PostgreSQL-->>AccountRepository: Return updated entity
+        AccountService->>AccountEventPublisher: publishAccountClosedEvent(account, reason)
+        AccountEventPublisher->>Kafka: Publish AccountClosedEvent
+        AccountService-->>AccountController: Return closed account
+        AccountController-->>Client: Return closed account
+    end
 
-    AccountService->>AccountEventPublisher: publishAccountCreatedEvent(account)
-    AccountEventPublisher->>AccountEventPublisher: Create AccountCreatedEvent
-    AccountEventPublisher->>Kafka: Publish event (CloudEvents format)
-    Note over Kafka: Stored in Eventuate tables
-
-    Note over AccountService: @Transactional commits
-
-    AccountService-->>AccountController: Return account object
-    AccountController-->>Client: 200 OK with JSON response
-
-    Kafka-->>OtherServices: Consume AccountCreatedEvent
-    Note over OtherServices: Process event asynchronously
+%% Event Consumption (asynchronous)
+    Kafka-->>Consumers: Consume account events
+    Note over Consumers: Process events to maintain local account data

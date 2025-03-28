@@ -2,11 +2,13 @@ package com.digital.tram.balance.service;
 
 import com.digital.tram.balance.domain.Account;
 import com.digital.tram.balance.domain.AccountRepository;
+import com.digital.tram.balance.exception.AccountClosedException;
+import com.digital.tram.balance.exception.AccountNotFoundException;
+import com.digital.tram.balance.messaging.AccountEventPublisher;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
-import com.digital.tram.balance.messaging.AccountEventPublisher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,45 +16,115 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class AccountService {
 
-    private final AccountRepository accountRepository;
-    private final AccountEventPublisher accountEventPublisher;
+  private static final String ACCOUNT_NOT_FOUND_MESSAGE = "Account not found: ";
+  private final AccountRepository accountRepository;
+  private final AccountEventPublisher accountEventPublisher;
 
-    @Autowired
-    public AccountService(AccountRepository accountRepository,AccountEventPublisher accountEventPublisher) {
-        this.accountRepository = accountRepository;
-        this.accountEventPublisher = accountEventPublisher;
+  @Autowired
+  public AccountService(
+      AccountRepository accountRepository, AccountEventPublisher accountEventPublisher) {
+    this.accountRepository = accountRepository;
+    this.accountEventPublisher = accountEventPublisher;
+  }
+
+  @Transactional
+  public Account createAccount(String ownerName, BigDecimal initialBalance) {
+    String accountId = UUID.randomUUID().toString();
+    Account account = new Account(accountId, ownerName, initialBalance);
+    Account savedAccount = accountRepository.save(account);
+
+    // Publish event for account creation
+    accountEventPublisher.publishAccountCreatedEvent(savedAccount);
+
+    return savedAccount;
+  }
+
+  @Transactional(readOnly = true)
+  public Optional<Account> getAccount(String accountId) {
+    return accountRepository.findByAccountId(accountId);
+  }
+
+  @Transactional(readOnly = true)
+  public List<Account> getAllAccounts() {
+    return accountRepository.findAll();
+  }
+
+  @Transactional(readOnly = true)
+  public boolean validateAccount(String accountId, BigDecimal amount) {
+    Optional<Account> accountOptional = accountRepository.findByAccountId(accountId);
+    return accountOptional
+        .map(
+            account -> {
+              if (account.isClosed()) {
+                return false;
+              }
+              return account.hasSufficientBalance(amount);
+            })
+        .orElse(false);
+  }
+
+  @Transactional
+  public Account updateBalance(String accountId, BigDecimal amount, boolean isCredit) {
+    Account account =
+        accountRepository
+            .findByAccountId(accountId)
+            .orElseThrow(() -> new AccountNotFoundException(ACCOUNT_NOT_FOUND_MESSAGE + accountId));
+
+    if (account.isClosed()) {
+      throw new AccountClosedException("Cannot update balance for closed account: " + accountId);
     }
 
-    @Transactional
-    public Account createAccount(String ownerName, BigDecimal initialBalance) {
-        String accountId = UUID.randomUUID().toString();
-        Account account = new Account(accountId, ownerName, initialBalance);
-        Account savedAccount = accountRepository.save(account);
-        // Publish event for account creation
-        accountEventPublisher.publishAccountCreatedEvent(savedAccount);
-        return savedAccount;
+    if (isCredit) {
+      account.credit(amount);
+    } else {
+      account.debit(amount);
     }
 
-    @Transactional(readOnly = true)
-    public Optional<Account> getAccount(String accountId) {
-        return accountRepository.findByAccountId(accountId);
+    Account savedAccount = accountRepository.save(account);
+
+    // Publish event for account update
+    accountEventPublisher.publishAccountUpdatedEvent(savedAccount);
+
+    return savedAccount;
+  }
+
+  @Transactional
+  public Account updateAccountOwner(String accountId, String newOwnerName) {
+    Account account =
+        accountRepository
+            .findByAccountId(accountId)
+            .orElseThrow(() -> new AccountNotFoundException(ACCOUNT_NOT_FOUND_MESSAGE + accountId));
+
+    if (account.isClosed()) {
+      throw new AccountClosedException("Cannot update owner for closed account: " + accountId);
     }
 
-    @Transactional(readOnly = true)
-    public boolean validateAccount(String accountId, BigDecimal amount) {
-        Optional<Account> accountOptional = accountRepository.findByAccountId(accountId);
-        return accountOptional.map(account -> account.hasSufficientBalance(amount)).orElse(false);
+    account.setOwnerName(newOwnerName);
+    Account savedAccount = accountRepository.save(account);
+
+    // Publish event for account update
+    accountEventPublisher.publishAccountUpdatedEvent(savedAccount);
+
+    return savedAccount;
+  }
+
+  @Transactional
+  public Account closeAccount(String accountId, String closureReason) {
+    Account account =
+        accountRepository
+            .findByAccountId(accountId)
+            .orElseThrow(() -> new AccountNotFoundException(ACCOUNT_NOT_FOUND_MESSAGE + accountId));
+
+    if (account.isClosed()) {
+      throw new AccountClosedException("Account is already closed: " + accountId);
     }
 
-    @Transactional
-    public void updateBalance(String accountId, BigDecimal amount, boolean isCredit) {
-        accountRepository.findByAccountId(accountId).ifPresent(account -> {
-            if (isCredit) {
-                account.credit(amount);
-            } else {
-                account.debit(amount);
-            }
-            accountRepository.save(account);
-        });
-    }
+    account.setClosed(true);
+    Account savedAccount = accountRepository.save(account);
+
+    // Publish event for account closure
+    accountEventPublisher.publishAccountClosedEvent(savedAccount, closureReason);
+
+    return savedAccount;
+  }
 }

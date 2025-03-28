@@ -1,0 +1,54 @@
+sequenceDiagram
+    participant Client
+    participant TransactionController
+    participant TransactionService
+    participant AccountService
+    participant LocalAccountCache
+    participant BalanceServiceAPI
+    participant TransactionRepository
+    participant EventPublisher
+    participant Kafka
+    participant PostgreSQL
+    participant BalanceService
+
+    Client->>TransactionController: POST /transactions
+    TransactionController->>TransactionService: createTransaction(accountId, amount, type, description)
+
+%% Account validation using local cache if available
+    TransactionService->>AccountService: validateAccount(accountId, amount)
+    AccountService->>LocalAccountCache: findByAccountId(accountId)
+
+    alt Account exists in local cache
+        LocalAccountCache-->>AccountService: Return account cache
+        Note over AccountService: Check if account is closed<br/>Check if sufficient balance
+    else Account not in local cache
+        AccountService->>BalanceServiceAPI: GET /accounts/{id}/validate
+        BalanceServiceAPI-->>AccountService: Return validation response
+    end
+
+    AccountService-->>TransactionService: Return validation result
+
+    alt Valid account with sufficient balance
+        TransactionService->>TransactionService: Generate transaction ID
+        TransactionService->>TransactionRepository: save(transaction)
+        TransactionRepository->>PostgreSQL: INSERT INTO transaction
+        PostgreSQL-->>TransactionRepository: Return saved transaction
+
+        TransactionService->>EventPublisher: publishTransactionCreatedEvent(transaction)
+        EventPublisher->>Kafka: Publish TransactionCreatedEvent
+
+        TransactionService-->>TransactionController: Return transaction
+        TransactionController-->>Client: Return transaction with 200 OK
+
+    %% Asynchronous balance update (consumed by Balance Service)
+        Kafka-->>BalanceService: Consume TransactionCreatedEvent
+        Note over BalanceService: Update account balance
+
+    %% Asynchronous account update event (consumed by Transaction Service)
+        BalanceService->>Kafka: Publish AccountUpdatedEvent
+        Kafka-->>AccountService: Consume AccountUpdatedEvent
+        AccountService->>LocalAccountCache: Update local account cache
+    else Invalid account or insufficient balance
+        TransactionService-->>TransactionController: Throw exception
+        TransactionController-->>Client: Return 400 Bad Request
+    end

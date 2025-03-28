@@ -4,40 +4,55 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Version;
 import java.math.BigDecimal;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 @Entity
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
-@AllArgsConstructor
+@ToString(exclude = {"version"})
 public class Account {
-    @Id
-    private String accountId;
+  @Id private String accountId;
 
-    private String ownerName;
+  private String ownerName;
 
-    private BigDecimal balance;
+  private BigDecimal balance;
 
-    @Version
-    private Long version;
+  private boolean closed = false;
 
-    public Account(String accountId, String ownerName, BigDecimal initialBalance) {
-        this.accountId = accountId;
-        this.ownerName = ownerName;
-        this.balance = initialBalance;
-    }
+  @Version private Long version;
 
-    public void credit(BigDecimal amount) {
-        this.balance = this.balance.add(amount);
-    }
+  public Account(String accountId, String ownerName, BigDecimal initialBalance) {
+    this.accountId = accountId;
+    this.ownerName = ownerName;
+    this.balance = initialBalance;
+    this.closed = false;
+  }
 
-    public void debit(BigDecimal amount) {
-        this.balance = this.balance.subtract(amount);
-    }
+  public void credit(BigDecimal amount) {
+    this.balance = this.balance.add(amount);
+  }
 
-    public boolean hasSufficientBalance(BigDecimal amount) {
-        return this.balance.compareTo(amount) >= 0;
-    }
+  public void debit(BigDecimal amount) {
+    this.balance = this.balance.subtract(amount);
+  }
+
+  public boolean hasSufficientBalance(BigDecimal amount) {
+    return this.balance.compareTo(amount) >= 0;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (!(o instanceof Account account)) return false;
+    return accountId != null && accountId.equals(account.accountId);
+  }
+
+  @Override
+  public int hashCode() {
+    return getClass().hashCode();
+  }
 }

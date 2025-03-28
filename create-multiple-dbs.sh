@@ -18,7 +18,14 @@ EOSQL
 if [ -n "$POSTGRES_MULTIPLE_DATABASES" ]; then
     echo "Multiple database creation requested: $POSTGRES_MULTIPLE_DATABASES"
     for db in $(echo $POSTGRES_MULTIPLE_DATABASES | tr ',' ' '); do
-create_user_and_database $db
+        create_user_and_database $db
     done
     echo "Multiple databases created"
+
+    # Add Eventuate schema to each database
+    for db in $(echo $POSTGRES_MULTIPLE_DATABASES | tr ',' ' '); do
+        echo "Initializing Eventuate schema in $db"
+        psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" -d "$db" -f /docker-entrypoint-initdb.d/eventuate-schema.sql
+    done
+    echo "Eventuate schema initialized in all databases"
 fi
