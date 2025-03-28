@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e  # Exit on error
 export COMPOSE_BAKE=true
-
+clear
 echo "=== Building Eventuate Tram Microservices Demo ==="
 
 # Step 1: Make database initialization script executable

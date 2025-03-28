@@ -38,8 +38,6 @@ public class AccountService {
 
     // Save account
     Account savedAccount = accountRepository.save(account);
-    System.out.println("Creating account with ID: " + accountId);
-
     // Explicitly publish the event
     try {
       accountEventPublisher.publishAccountCreatedEvent(savedAccount);
