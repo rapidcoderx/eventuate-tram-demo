@@ -4,6 +4,7 @@ import com.digital.tram.transaction.domain.Transaction;
 import com.digital.tram.transaction.domain.TransactionRepository;
 import com.digital.tram.transaction.messaging.TransactionEventPublisher;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -27,7 +28,7 @@ public class TransactionService {
             WebClient.Builder webClientBuilder) {
         this.transactionRepository = transactionRepository;
         this.eventPublisher = eventPublisher;
-        this.webClient = webClientBuilder.baseUrl("http://localhost:8081").build();
+        this.webClient = webClientBuilder.build();
     }
 
     @Transactional

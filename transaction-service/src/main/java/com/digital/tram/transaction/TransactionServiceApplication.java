@@ -12,10 +12,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 @SpringBootApplication
 @Import({
-        TramMessageProducerJdbcConfiguration.class,
-        TramConsumerJdbcAutoConfiguration.class,
-        EventuateTramKafkaMessageConsumerConfiguration.class,
-        TramEventsPublisherConfiguration.class
+  TramMessageProducerJdbcConfiguration.class,
+  TramConsumerJdbcAutoConfiguration.class,
+  EventuateTramKafkaMessageConsumerConfiguration.class,
+  TramEventsPublisherConfiguration.class
 })
 public class TransactionServiceApplication {
   public static void main(String[] args) {
@@ -24,6 +24,10 @@ public class TransactionServiceApplication {
 
   @Bean
   public WebClient.Builder webClientBuilder() {
-    return WebClient.builder();
+    String balanceServiceUrl = System.getenv("BALANCE_SERVICE_URL");
+    if (balanceServiceUrl == null || balanceServiceUrl.isEmpty()) {
+      balanceServiceUrl = "http://localhost:8081"; // Default for local development
+    }
+    return WebClient.builder().baseUrl(balanceServiceUrl);
   }
 }
