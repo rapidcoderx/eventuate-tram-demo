@@ -29,15 +29,23 @@ docker compose up -d postgres kafka
 echo "Waiting for infrastructure to be ready (30 seconds)..."
 sleep 30
 
-# Step 6: Start application services
+# Step 6: Start CDC service
+echo "Starting CDC service for event publishing..."
+docker compose up -d eventuate-cdc-service
+
+# Step 7: Wait for CDC service to be ready
+echo "Waiting for CDC service to be ready (10 seconds)..."
+sleep 10
+
+# Step 8: Start application services
 echo "Starting application services..."
 docker compose up -d balance-service transaction-service
 
-# Step 7: Wait for application services to be ready
+# Step 9: Wait for application services to be ready
 echo "Waiting for application services to be ready (30 seconds)..."
 sleep 30
 
-# Step 8: Start monitoring services
+# Step 10: Start monitoring services
 echo "Starting monitoring services..."
 docker compose up -d prometheus kafka-ui kafka-exporter
 
@@ -47,7 +55,9 @@ echo "- Balance Service: http://localhost:8081"
 echo "- Transaction Service: http://localhost:8082"
 echo "- Kafka UI: http://localhost:9191"
 echo "- Prometheus: http://localhost:9090"
+echo "- CDC Service: http://localhost:8099"
 
 echo ""
 echo "You can check service status with: docker compose ps"
 echo "You can check service logs with: docker compose logs -f [service-name]"
+echo "To check CDC service logs: docker compose logs -f eventuate-cdc-service"
