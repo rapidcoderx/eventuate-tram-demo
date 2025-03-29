@@ -11,9 +11,9 @@ CREATE TABLE IF NOT EXISTS eventuate.message (
                                                  headers VARCHAR(1000) NOT NULL,
                                                  payload VARCHAR(1000) NOT NULL,
                                                  published SMALLINT DEFAULT 0,
-                                                 creation_time BIGINT
+                                                 creation_time BIGINT,
+                                                 message_partition VARCHAR(1000) -- Add this line
 );
-
 -- Create received messages table
 CREATE TABLE IF NOT EXISTS eventuate.received_messages (
                                                            consumer_id VARCHAR(1000),
