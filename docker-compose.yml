@@ -167,7 +167,7 @@ services:
       retries: 5
 
   eventuate-cdc-service:
-    image: eventuateio/eventuate-cdc-service:0.33.0.RELEASE
+    image: eventuateio/eventuate-cdc-service:0.18.0.RELEASE
     container_name: eventuate-cdc-service
     depends_on:
       - postgres

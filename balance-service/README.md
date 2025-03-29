@@ -50,6 +50,8 @@ The implementation uses:
 
 This architecture ensures that all domain events are reliably published and processed, maintaining eventual consistency across the distributed system.
 
+https://github.com/wuyichen24/microservices-patterns/blob/master/docs/services/eventuate_cdc_service.md
+
 ## Technical Stack
 - Java 17
 - Spring Boot 3.4.4
