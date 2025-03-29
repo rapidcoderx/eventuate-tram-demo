@@ -166,6 +166,39 @@ services:
       timeout: 5s
       retries: 5
 
+  eventuate-cdc-service:
+    image: eventuateio/eventuate-cdc-service:0.33.0.RELEASE
+    container_name: eventuate-cdc-service
+    depends_on:
+      - postgres
+      - kafka
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/postgres
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      EVENTUATELOCAL_KAFKA_BOOTSTRAP_SERVERS: kafka:9093
+      EVENTUATE_CDC_TYPE: EventuateLocalPolling
+      EVENTUATE_CDC_READER_1_TYPE: polling
+      EVENTUATE_CDC_READER_1_DATASOURCEURL: jdbc:postgresql://postgres:5432/balance_db
+      EVENTUATE_CDC_READER_1_DATASOURCEUSERNAME: postgres
+      EVENTUATE_CDC_READER_1_DATASOURCEPASSWORD: postgres
+      EVENTUATE_CDC_READER_1_DATASOURCEDRIVERCLASSNAME: org.postgresql.Driver
+      EVENTUATE_CDC_READER_1_LEADERSHIPLOCKPATH: /eventuate/cdc/leader/balance
+      EVENTUATE_CDC_READER_1_BINLOGCLIENTID: 1
+      EVENTUATE_CDC_READER_2_TYPE: polling
+      EVENTUATE_CDC_READER_2_DATASOURCEURL: jdbc:postgresql://postgres:5432/transaction_db
+      EVENTUATE_CDC_READER_2_DATASOURCEUSERNAME: postgres
+      EVENTUATE_CDC_READER_2_DATASOURCEPASSWORD: postgres
+      EVENTUATE_CDC_READER_2_DATASOURCEDRIVERCLASSNAME: org.postgresql.Driver
+      EVENTUATE_CDC_READER_2_LEADERSHIPLOCKPATH: /eventuate/cdc/leader/transaction
+      EVENTUATE_CDC_READER_2_BINLOGCLIENTID: 2
+    ports:
+      - "8099:8080"
+    networks:
+      - kafka-net
+    restart: unless-stopped
+
 networks:
   kafka-net:
     driver: bridge

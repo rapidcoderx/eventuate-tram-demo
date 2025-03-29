@@ -4,77 +4,125 @@ sequenceDiagram
     participant AccountService
     participant AccountRepository
     participant AccountEventPublisher
+    participant Database
+    participant CDC Service
     participant Kafka
-    participant PostgreSQL
     participant Consumers
 
 %% Account Creation
     rect rgba(191, 223, 255, 0.5)
-        Note over Client,PostgreSQL: Account Creation Flow
+        Note over Client,Kafka: Account Creation Flow
         Client->>AccountController: POST /accounts
         AccountController->>AccountService: createAccount(ownerName, initialBalance)
         AccountService->>AccountService: Generate UUID
+
+        Note over AccountService,Database: Transactional Boundary
         AccountService->>AccountRepository: save(account)
-        AccountRepository->>PostgreSQL: INSERT INTO account
-        PostgreSQL-->>AccountRepository: Return saved entity
+        AccountRepository->>Database: INSERT INTO account
+        Database-->>AccountRepository: Return saved entity
+
         AccountService->>AccountEventPublisher: publishAccountCreatedEvent(account)
-        AccountEventPublisher->>Kafka: Publish AccountCreatedEvent
+        AccountEventPublisher->>Database: INSERT INTO eventuate.message
+        Database-->>AccountEventPublisher: Message saved
+
         AccountService-->>AccountController: Return account
         AccountController-->>Client: Return created account
+
+        Note over Database,Kafka: Asynchronous Event Publishing
+        CDC Service->>Database: Poll for unpublished messages
+        Database-->>CDC Service: Return unpublished messages
+        CDC Service->>Kafka: Publish events to Kafka
+        CDC Service->>Database: Update published flag
     end
 
 %% Account Update
     rect rgba(191, 255, 223, 0.5)
-        Note over Client,PostgreSQL: Account Update Flow
+        Note over Client,Kafka: Account Update Flow
         Client->>AccountController: PUT /accounts/{id}/owner
         AccountController->>AccountService: updateAccountOwner(id, newOwnerName)
+
+        Note over AccountService,Database: Transactional Boundary
         AccountService->>AccountRepository: findByAccountId(id)
-        AccountRepository->>PostgreSQL: SELECT FROM account
-        PostgreSQL-->>AccountRepository: Return account
+        AccountRepository->>Database: SELECT FROM account
+        Database-->>AccountRepository: Return account
+
         AccountService->>AccountService: Update account owner
         AccountService->>AccountRepository: save(account)
-        AccountRepository->>PostgreSQL: UPDATE account
-        PostgreSQL-->>AccountRepository: Return updated entity
+        AccountRepository->>Database: UPDATE account
+        Database-->>AccountRepository: Return updated entity
+
         AccountService->>AccountEventPublisher: publishAccountUpdatedEvent(account)
-        AccountEventPublisher->>Kafka: Publish AccountUpdatedEvent
+        AccountEventPublisher->>Database: INSERT INTO eventuate.message
+        Database-->>AccountEventPublisher: Message saved
+
         AccountService-->>AccountController: Return updated account
         AccountController-->>Client: Return updated account
+
+        Note over Database,Kafka: Asynchronous Event Publishing
+        CDC Service->>Database: Poll for unpublished messages
+        Database-->>CDC Service: Return unpublished messages
+        CDC Service->>Kafka: Publish events to Kafka
+        CDC Service->>Database: Update published flag
     end
 
 %% Balance Update
     rect rgba(255, 223, 191, 0.5)
-        Note over Client,PostgreSQL: Balance Update Flow
+        Note over Client,Kafka: Balance Update Flow
         Client->>AccountController: PUT /accounts/{id}/balance
         AccountController->>AccountService: updateBalance(id, amount, isCredit)
+
+        Note over AccountService,Database: Transactional Boundary
         AccountService->>AccountRepository: findByAccountId(id)
-        AccountRepository->>PostgreSQL: SELECT FROM account
-        PostgreSQL-->>AccountRepository: Return account
+        AccountRepository->>Database: SELECT FROM account
+        Database-->>AccountRepository: Return account
+
         AccountService->>AccountService: credit() or debit()
         AccountService->>AccountRepository: save(account)
-        AccountRepository->>PostgreSQL: UPDATE account
-        PostgreSQL-->>AccountRepository: Return updated entity
+        AccountRepository->>Database: UPDATE account
+        Database-->>AccountRepository: Return updated entity
+
         AccountService->>AccountEventPublisher: publishAccountUpdatedEvent(account)
-        AccountEventPublisher->>Kafka: Publish AccountUpdatedEvent
+        AccountEventPublisher->>Database: INSERT INTO eventuate.message
+        Database-->>AccountEventPublisher: Message saved
+
         AccountService-->>AccountController: Return updated account
         AccountController-->>Client: Return updated account
+
+        Note over Database,Kafka: Asynchronous Event Publishing
+        CDC Service->>Database: Poll for unpublished messages
+        Database-->>CDC Service: Return unpublished messages
+        CDC Service->>Kafka: Publish events to Kafka
+        CDC Service->>Database: Update published flag
     end
 
 %% Account Closure
     rect rgba(255, 191, 191, 0.5)
-        Note over Client,PostgreSQL: Account Closure Flow
+        Note over Client,Kafka: Account Closure Flow
         Client->>AccountController: POST /accounts/{id}/close
         AccountController->>AccountService: closeAccount(id, reason)
+
+        Note over AccountService,Database: Transactional Boundary
         AccountService->>AccountRepository: findByAccountId(id)
-        AccountRepository->>PostgreSQL: SELECT FROM account
-        PostgreSQL-->>AccountRepository: Return account
+        AccountRepository->>Database: SELECT FROM account
+        Database-->>AccountRepository: Return account
+
         AccountService->>AccountService: Set account.closed = true
         AccountService->>AccountRepository: save(account)
-        AccountRepository->>PostgreSQL: UPDATE account
-        PostgreSQL-->>AccountRepository: Return updated entity
+        AccountRepository->>Database: UPDATE account
+        Database-->>AccountRepository: Return updated entity
+
         AccountService->>AccountEventPublisher: publishAccountClosedEvent(account, reason)
-        AccountEventPublisher->>Kafka: Publish AccountClosedEvent
+        AccountEventPublisher->>Database: INSERT INTO eventuate.message
+        Database-->>AccountEventPublisher: Message saved
+
         AccountService-->>AccountController: Return closed account
         AccountController-->>Client: Return closed account
+
+        Note over Database,Kafka: Asynchronous Event Publishing
+        CDC Service->>Database: Poll for unpublished messages
+        Database-->>CDC Service: Return unpublished messages
+        CDC Service->>Kafka: Publish events to Kafka
+        CDC Service->>Database: Update published flag
     end
 
 %% Event Consumption (asynchronous)

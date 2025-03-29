@@ -9,6 +9,46 @@ The Balance Service is a microservice that manages account creation and balance 
 - Validate account balances for transaction processing
 - React to transaction events (PAYMENT/DEPOSIT) to update balances
 - Transactional messaging using Eventuate Tram
+## Event Architecture
+
+The Balance Service implements the **Transactional Outbox Pattern** for reliable event publishing:
+
+### How It Works
+
+1. **Transactional Database Operations**:
+    - When an account is created, updated, or closed, the service saves both:
+        - The account entity in the `account` table
+        - The corresponding event in the `eventuate.message` table
+    - Both operations occur within the same database transaction
+    - If either operation fails, the entire transaction is rolled back
+
+2. **Change Data Capture (CDC)**:
+    - A dedicated CDC service polls the `eventuate.message` table for unpublished messages
+    - The CDC service publishes these messages to Kafka
+    - After successful publishing, the CDC service updates the `published` flag
+
+3. **Event Consumption**:
+    - The Transaction Service subscribes to these events
+    - It maintains a local cache of account data based on these events
+    - This enables the Transaction Service to validate transactions locally when possible
+
+### Benefits of This Approach
+
+- **Data Consistency**: Account state and events are always consistent due to the transactional approach
+- **Reliability**: No events are lost, even if Kafka is temporarily unavailable
+- **Eventual Consistency**: Services eventually converge to a consistent state
+- **Loose Coupling**: Services communicate primarily through events rather than direct API calls
+- **Resilience**: Services can continue operating with basic functionality even when other services are down
+
+### Technical Implementation
+
+The implementation uses:
+- **Eventuate Tram**: For the transactional messaging infrastructure
+- **PostgreSQL**: For storing both domain data and outbox messages
+- **CDC Service**: For reliably publishing events from the database to Kafka
+- **Kafka**: As the message broker for publishing/subscribing to events
+
+This architecture ensures that all domain events are reliably published and processed, maintaining eventual consistency across the distributed system.
 
 ## Technical Stack
 - Java 17
